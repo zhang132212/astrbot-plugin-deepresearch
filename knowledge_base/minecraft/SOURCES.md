@@ -9,6 +9,11 @@
 - Commands：https://minecraft.wiki/w/Commands
 - Villager：https://minecraft.wiki/w/Villager
 - Brewing：https://minecraft.wiki/w/Brewing
+- Hopper：https://minecraft.wiki/w/Hopper
+- Item sorter：https://minecraft.wiki/w/Tutorial:Item_sorter
+- Mob spawning：https://minecraft.wiki/w/Spawn
+- Chunk：https://minecraft.wiki/w/Chunk
+- Iron Golem：https://minecraft.wiki/w/Iron_Golem
 
 维护原则：
 

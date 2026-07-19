@@ -187,7 +187,7 @@ docker compose restart astrbot
 
 ## ⛏️ Minecraft 知识库
 
-仓库附带可直接导入 AstrBot 的 [Minecraft 知识包](knowledge_base/minecraft/README.md)。它按生存、红石、战斗、世界探索、指令和 FAQ 分成多个 Markdown 文件，适合向量检索；其中已包含红石比较器的比较模式、减法模式与常见用途。
+仓库附带可直接导入 AstrBot 的 [Minecraft 知识包](knowledge_base/minecraft/README.md)。它按生存、红石、战斗、世界探索、指令、FAQ 与生电专题分成多个 Markdown 文件，适合向量检索；生电部分包含红石时序、比较器/漏斗算法、物流分类、刷怪农场、区块加载、TPS 与版本差异。
 
 导入流程：
 
