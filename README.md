@@ -26,6 +26,7 @@
 - [✨ 核心特性](#-核心特性)
 - [🚀 快速上手](#-快速上手)
 - [🐳 Docker 部署 AstrBot](#-docker-部署-astrbot)
+- [⛏️ Minecraft 知识库](#️-minecraft-知识库)
 - [🖼️ 图片报告与流程图](#️-图片报告与流程图)
 - [🗺️ 路线图 (Roadmap)](#️-路线图-roadmap)
 - [🏗️ 技术架构](#️-技术架构)
@@ -183,6 +184,18 @@ docker compose restart astrbot
 - **密钥与权限**：LLM、Google API 和聊天平台密钥只保存在 AstrBot 配置中，不要提交到 Git 仓库或写入镜像。对管理端使用 HTTPS、访问控制和最小化端口暴露。
 - **资源与费用**：一个研究请求会触发多引擎搜索与多次 LLM 调用。生产环境应下调 `max_terms_to_search`、`max_search_results_per_term` 与并发量，并为 LLM 服务设置额度告警。
 - **版本兼容性**：本插件通过 AstrBot 的 `Star.html_render` 生成图片。升级 AstrBot 前，先在测试实例执行一次 `image` 输出，确认渲染接口仍可用。
+
+## ⛏️ Minecraft 知识库
+
+仓库附带可直接导入 AstrBot 的 [Minecraft 知识包](knowledge_base/minecraft/README.md)。它按生存、红石、战斗、世界探索、指令和 FAQ 分成多个 Markdown 文件，适合向量检索；其中已包含红石比较器的比较模式、减法模式与常见用途。
+
+导入流程：
+
+1. 在 AstrBot 的知识库管理页面新建知识库，名称设为 `Minecraft`。
+2. 导入 `knowledge_base/minecraft/` 下的 `00` 至 `06` 号 Markdown 文件。
+3. 在插件配置中保持 `enable_knowledge_base=true`、`knowledge_base_name=Minecraft`，或改成你实际创建的知识库名称。
+
+启用后，`/deepresearch` 会先检索该知识库。命中内容将直接作为报告依据；未命中时才调用网页搜索引擎。可通过 `knowledge_base_top_k` 和 `knowledge_base_fusion_top_k` 调整取回片段数。
 
 ## 🖼️ 图片报告与流程图
 

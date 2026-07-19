@@ -70,6 +70,19 @@ class DeepResearchPlugin(Star):
         self.available_engine_names: List[str] = []
         self.max_count: int = self.config.get("max_search_results_per_term", 6)
         self.max_terms: int = self.config.get("max_terms_to_search", 3)
+        self.enable_knowledge_base: bool = self.config.get(
+            "enable_knowledge_base", True
+        )
+        self.knowledge_base_name: str = str(
+            self.config.get("knowledge_base_name", "Minecraft") or ""
+        ).strip()
+        self.knowledge_base_top_k: int = max(
+            1, int(self.config.get("knowledge_base_top_k", 5))
+        )
+        self.knowledge_base_fusion_top_k: int = max(
+            self.knowledge_base_top_k,
+            int(self.config.get("knowledge_base_fusion_top_k", 20)),
+        )
         engine_config = self.config.get("engine_config", {})
 
         self.output_manager = OutputFormatManager()
@@ -310,6 +323,55 @@ class DeepResearchPlugin(Star):
             f"阶段二：所有搜索引擎共找到 {total_items_found} 条结果，合并去重后剩余 {len(formatted_results)} 条。"
         )
         return formatted_results
+
+    async def _search_knowledge_base(self, query: str) -> List[Dict[str, str]]:
+        """Retrieve local knowledge first and normalize it for report aggregation."""
+        if not self.enable_knowledge_base or not self.knowledge_base_name:
+            return []
+
+        kb_manager = getattr(self.context, "kb_manager", None)
+        if not kb_manager or not hasattr(kb_manager, "retrieve"):
+            logger.warning("阶段二：当前 AstrBot 版本未提供知识库检索接口，将使用网页搜索。")
+            return []
+
+        try:
+            retrieval = await kb_manager.retrieve(
+                query=query,
+                kb_names=[self.knowledge_base_name],
+                top_k_fusion=self.knowledge_base_fusion_top_k,
+                top_m_final=self.knowledge_base_top_k,
+            )
+        except Exception as e:
+            logger.warning(
+                f"阶段二：知识库 '{self.knowledge_base_name}' 检索失败，将使用网页搜索：{e}",
+                exc_info=True,
+            )
+            return []
+
+        results = retrieval.get("results", []) if retrieval else []
+        knowledge_summaries: List[Dict[str, str]] = []
+        for result in results:
+            content = str(result.get("content", "")).strip()
+            if not content:
+                continue
+            doc_name = str(result.get("doc_name", "未命名文档"))
+            chunk_index = result.get("chunk_index", 0)
+            knowledge_summaries.append(
+                {
+                    "url": f"知识库：{self.knowledge_base_name} / {doc_name}（片段 {chunk_index}）",
+                    "summary": content,
+                }
+            )
+
+        if knowledge_summaries:
+            logger.info(
+                f"阶段二：知识库 '{self.knowledge_base_name}' 命中 {len(knowledge_summaries)} 个片段，将优先生成报告。"
+            )
+        else:
+            logger.info(
+                f"阶段二：知识库 '{self.knowledge_base_name}' 未命中相关内容，将使用网页搜索。"
+            )
+        return knowledge_summaries
 
     async def _stage2_link_selection(
         self, provider: Provider, original_query: str, links: List[Dict[str, str]]
@@ -617,59 +679,64 @@ class DeepResearchPlugin(Star):
                 "✅ 阶段一完成。\n⏳ 开始阶段二：信息检索与筛选..."
             )
             # 阶段二
-            search_terms = parsed_query.get("search_queries", []) or parsed_query.get(
-                "all_search_terms", []
-            )
-            initial_links = await self._search_web(search_terms)
-            if not initial_links:
+            summaries = await self._search_knowledge_base(query)
+            if summaries:
                 yield event.plain_result(
-                    "⚠️ 阶段二警告：网络搜索未返回任何初始结果（或搜索功能未实现）。"
+                    f"📚 知识库 '{self.knowledge_base_name}' 命中 {len(summaries)} 个片段，优先使用本地知识生成报告。"
                 )
-                # 如果搜索失败，尝试直接让LLM回答
-                yield event.plain_result("⚠️ 尝试让LLM根据自身知识直接生成报告...")
-                direct_summary = await self._summarize_content(
-                    provider,
-                    query,
-                    "LLM Knowledge Base",
-                    "请基于你自身的知识库，生成一份关于此主题的报告。",
+            else:
+                search_terms = parsed_query.get("search_queries", []) or parsed_query.get(
+                    "all_search_terms", []
                 )
-                if direct_summary:
-                    summaries = [
-                        {"url": "LLM Knowledge Base", "summary": direct_summary}
-                    ]
-                    selected_links = ["LLM Knowledge Base"]
+                initial_links = await self._search_web(search_terms)
+                if not initial_links:
+                    yield event.plain_result(
+                        "⚠️ 阶段二警告：知识库与网络搜索均未返回初始结果。"
+                    )
+                    # 如果搜索失败，尝试直接让LLM回答
+                    yield event.plain_result("⚠️ 尝试让LLM根据自身知识直接生成报告...")
+                    direct_summary = await self._summarize_content(
+                        provider,
+                        query,
+                        "LLM Knowledge Base",
+                        "请基于你自身的知识库，生成一份关于此主题的报告。",
+                    )
+                    if direct_summary:
+                        summaries = [
+                            {"url": "LLM Knowledge Base", "summary": direct_summary}
+                        ]
+                    else:
+                        yield event.plain_result(
+                            "❌ 阶段二失败：知识库、搜索和LLM自身知识均无法提供信息。"
+                        )
+                        return
                 else:
                     yield event.plain_result(
-                        "❌ 阶段二失败：搜索和LLM自身知识均无法提供信息。"
+                        f"ℹ️ 知识库未命中，搜索到 {len(initial_links)} 个初始链接，开始筛选..."
                     )
-                    return
-            else:
-                yield event.plain_result(
-                    f"ℹ️ 搜索到 {len(initial_links)} 个初始链接，开始筛选..."
-                )
-                selected_links = await self._stage2_link_selection(
-                    provider, query, initial_links
-                )
-                if not selected_links:
+                    selected_links = await self._stage2_link_selection(
+                        provider, query, initial_links
+                    )
+                    if not selected_links:
+                        yield event.plain_result(
+                            "❌ 阶段二失败：LLM未能从结果中筛选出相关链接。"
+                        )
+                        return
                     yield event.plain_result(
-                        "❌ 阶段二失败：LLM未能从结果中筛选出相关链接。"
+                        f"✅ 阶段二完成。筛选出 {len(selected_links)} 个链接。\n⏳ 开始阶段三：内容处理与分析..."
                     )
-                    return
-                yield event.plain_result(
-                    f"✅ 阶段二完成。筛选出 {len(selected_links)} 个链接。\n⏳ 开始阶段三：内容处理与分析..."
-                )
-                # 阶段三 - 处理
-                summaries = await self._stage3_content_processing(
-                    provider, query, selected_links
-                )
-                if not summaries:
+                    # 阶段三 - 处理
+                    summaries = await self._stage3_content_processing(
+                        provider, query, selected_links
+                    )
+                    if not summaries:
+                        yield event.plain_result(
+                            "❌ 阶段三失败：未能从任何选定链接抓取或总结有效内容。"
+                        )
+                        return
                     yield event.plain_result(
-                        "❌ 阶段三失败：未能从任何选定链接抓取或总结有效内容。"
+                        f"ℹ️ 已抓取并总结 {len(summaries)} 篇内容。开始聚合分析..."
                     )
-                    return
-                yield event.plain_result(
-                    f"ℹ️ 已抓取并总结 {len(summaries)} 篇内容。开始聚合分析..."
-                )
 
             # 阶段三 - 聚合
             aggregated_markdown = await self._stage3_aggregation(

@@ -21,6 +21,30 @@
         "hint": "阶段一LLM会生成多个搜索词，为控制API调用次数，限制实际用于搜索的词条数。",
         "default": 20
     },
+    "enable_knowledge_base": {
+        "description": "优先检索 AstrBot 知识库",
+        "type": "bool",
+        "hint": "启用后，插件会先从指定知识库检索；仅在未命中时才使用网页搜索。",
+        "default": true
+    },
+    "knowledge_base_name": {
+        "description": "优先检索的知识库名称",
+        "type": "string",
+        "hint": "在 AstrBot 知识库管理页面创建并导入文档后的知识库名称，例如 Minecraft。",
+        "default": "Minecraft"
+    },
+    "knowledge_base_top_k": {
+        "description": "知识库最终返回片段数",
+        "type": "int",
+        "hint": "每次研究最多使用多少个知识库片段作为报告依据。",
+        "default": 5
+    },
+    "knowledge_base_fusion_top_k": {
+        "description": "知识库融合候选片段数",
+        "type": "int",
+        "hint": "稠密检索和关键词检索融合后保留的候选数量。",
+        "default": 20
+    },
     "engine_config": {
         "description": "各搜索引擎配置",
         "type": "object",

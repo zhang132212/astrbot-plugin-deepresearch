@@ -11,6 +11,10 @@ DEFAULT_CONFIG = {
     "default_output_format": "image",
     "enable_url_resolution": True,
     "enable_parallel_processing": True,
+    "enable_knowledge_base": True,
+    "knowledge_base_name": "Minecraft",
+    "knowledge_base_top_k": 5,
+    "knowledge_base_fusion_top_k": 20,
     "engine_config": {}
 }
 

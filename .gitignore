@@ -8,6 +8,9 @@ preview/*
 !preview/minecraft_comparator_report.html
 !preview/minecraft_comparator_report.png
 
+# Locally generated knowledge-base import bundles
+knowledge_base/*.zip
+
 # C extensions
 *.so
 
