@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft 红石比较器：功能、模式与工作原理</title>
+<style>
+  :root {
+    --ink: #33363d;
+    --muted: #747780;
+    --paper: #fffdfb;
+    --canvas: #f4f1ef;
+    --cyan: #55bfd9;
+    --cyan-soft: #e8f8fb;
+    --pink: #ef8eb1;
+    --pink-soft: #fcebf2;
+    --coral: #ef9b80;
+    --mint: #69c8b7;
+    --line: #e6e1df;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    width: 920px;
+    color: var(--ink);
+    background: var(--canvas);
+    font-family: "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei",
+      "PingFang SC", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.78;
+    letter-spacing: 0;
+  }
+
+  .report {
+    position: relative;
+    overflow: hidden;
+    min-height: 1200px;
+    background: var(--paper);
+  }
+
+  .hero {
+    position: relative;
+    min-height: 390px;
+    overflow: hidden;
+    color: var(--ink);
+    background: #eef6f7;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .35;
+    background-image:
+      linear-gradient(rgba(59,93,102,.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,93,102,.10) 1px, transparent 1px);
+    background-size: 38px 38px;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: -5%;
+    right: -5%;
+    bottom: -80px;
+    height: 145px;
+    background: var(--paper);
+    border-radius: 50% 50% 0 0;
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 3;
+    width: 58%;
+    padding: 48px 0 90px 62px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 54px;
+    color: #667178;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .brand-mark {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    color: #26313a;
+    background: var(--cyan);
+    border: 3px solid #fff;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+
+  .eyebrow {
+    margin-bottom: 13px;
+    color: #319bb3;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  h1 {
+    max-width: 520px;
+    margin: 0;
+    color: var(--ink);
+    font-size: 43px;
+    line-height: 1.24;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-subtitle {
+    margin-top: 18px;
+    color: #7a8087;
+    font-size: 15px;
+  }
+
+  .hero-art {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    width: 43%;
+    height: 340px;
+    overflow: hidden;
+  }
+
+  .hero-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+
+  .mascot-stage {
+    position: absolute;
+    inset: 20px 22px 0 0;
+  }
+
+  .mascot-panel {
+    position: absolute;
+    top: 34px;
+    right: 34px;
+    width: 285px;
+    height: 256px;
+    background: #f8f5f4;
+    border: 8px solid #dce9eb;
+    border-radius: 48% 48% 28% 28%;
+    transform: rotate(3deg);
+  }
+
+  .antenna {
+    position: absolute;
+    top: -38px;
+    left: 126px;
+    width: 16px;
+    height: 54px;
+    background: var(--cyan);
+    border: 5px solid #343a46;
+    border-radius: 12px;
+  }
+
+  .antenna::after {
+    content: "";
+    position: absolute;
+    top: -19px;
+    left: -9px;
+    width: 24px;
+    height: 24px;
+    background: var(--pink);
+    border: 5px solid #343a46;
+    border-radius: 50%;
+  }
+
+  .bot-face {
+    position: absolute;
+    top: 62px;
+    left: 42px;
+    width: 185px;
+    height: 126px;
+    background: #dff6fa;
+    border: 7px solid #343a46;
+    border-radius: 46px;
+  }
+
+  .bot-face::before,
+  .bot-face::after {
+    content: "";
+    position: absolute;
+    top: 40px;
+    width: 25px;
+    height: 32px;
+    background: #343a46;
+    border-radius: 50%;
+    box-shadow: inset 7px 5px 0 var(--cyan);
+  }
+
+  .bot-face::before { left: 38px; }
+  .bot-face::after { right: 38px; box-shadow: inset -7px 5px 0 var(--pink); }
+
+  .bot-smile {
+    position: absolute;
+    left: 111px;
+    top: 151px;
+    width: 48px;
+    height: 23px;
+    border-bottom: 6px solid #343a46;
+    border-radius: 50%;
+  }
+
+  .bot-ear {
+    position: absolute;
+    top: 100px;
+    width: 28px;
+    height: 54px;
+    background: var(--pink);
+    border: 6px solid #343a46;
+    border-radius: 15px;
+  }
+
+  .bot-ear.left { left: 17px; }
+  .bot-ear.right { right: 17px; background: var(--cyan); }
+
+  .spark {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 7px solid var(--pink);
+    transform: rotate(45deg);
+  }
+
+  .spark.one { top: 24px; left: 14px; }
+  .spark.two { right: 5px; bottom: 45px; width: 18px; height: 18px; border-color: var(--cyan); }
+
+  .content {
+    position: relative;
+    z-index: 4;
+    padding: 0 62px 54px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: -24px 0 32px;
+  }
+
+  .stat {
+    min-height: 82px;
+    padding: 15px 18px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--cyan);
+    border-radius: 8px;
+  }
+
+  .stat:nth-child(2) { border-top-color: var(--pink); }
+  .stat:nth-child(3) { border-top-color: var(--coral); }
+
+  .stat-label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .stat-value {
+    display: block;
+    margin-top: 3px;
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .summary {
+    position: relative;
+    margin: 0 0 38px;
+    padding: 26px 30px 26px 35px;
+    background: var(--cyan-soft);
+    border-left: 7px solid var(--cyan);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .summary::after {
+    content: "RESEARCH NOTE";
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    color: rgba(51,54,61,.12);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .summary-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #248aa3;
+    font-size: 14px;
+    font-weight: 850;
+  }
+
+  .summary p { margin: 0; font-size: 18px; line-height: 1.75; }
+
+  .article { counter-reset: section; }
+
+  .article h2 {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 46px 0 18px;
+    color: var(--ink);
+    font-size: 27px;
+    line-height: 1.35;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+
+  .section-number {
+    flex: 0 0 auto;
+    display: inline-grid;
+    width: 46px;
+    height: 38px;
+    place-items: center;
+    color: #fff;
+    background: var(--pink);
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .article h2:nth-of-type(even) .section-number { background: var(--cyan); }
+
+  .article h3 {
+    margin: 30px 0 12px;
+    padding-left: 14px;
+    color: #4c515a;
+    border-left: 4px solid var(--mint);
+    font-size: 20px;
+    line-height: 1.45;
+  }
+
+  .article p { margin: 0 0 18px; }
+
+  .article strong { color: #2e879b; font-weight: 850; }
+
+  .article ul,
+  .article ol {
+    margin: 14px 0 24px;
+    padding: 18px 24px 18px 46px;
+    background: #faf8f7;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .article li { margin: 8px 0; padding-left: 4px; }
+  .article li::marker { color: var(--pink); font-weight: 800; }
+
+  .article blockquote {
+    margin: 24px 0;
+    padding: 20px 24px;
+    color: #4f5860;
+    background: var(--pink-soft);
+    border-left: 6px solid var(--pink);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .article blockquote p:last-child { margin-bottom: 0; }
+
+  .article table {
+    width: 100%;
+    margin: 22px 0 30px;
+    border-collapse: collapse;
+    overflow: hidden;
+    color: #343a42;
+    background: #edf3f5;
+    border: 2px solid #ccd9dd;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  .article th { color: #fff; background: #454d58; }
+  .article th, .article td {
+    padding: 13px 15px;
+    border-right: 1px solid #d4dfe2;
+    border-bottom: 1px solid #ccd9dd;
+    text-align: left;
+  }
+  .article th:last-child, .article td:last-child { border-right: 0; }
+  .article tbody tr:nth-child(odd) td { background: #edf5f7; }
+  .article tbody tr:nth-child(even) td { background: #f8edf2; }
+  .article tbody tr:last-child td { border-bottom: 0; }
+
+  .article pre {
+    margin: 22px 0;
+    padding: 20px;
+    overflow: hidden;
+    color: #eaf7f9;
+    background: #303640;
+    border-left: 6px solid var(--cyan);
+    border-radius: 7px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .article code {
+    padding: 2px 6px;
+    color: #b94f77;
+    background: var(--pink-soft);
+    border-radius: 4px;
+    font-family: Consolas, "SFMono-Regular", monospace;
+    font-size: .9em;
+  }
+
+  .article pre code { padding: 0; color: inherit; background: transparent; }
+
+  .flowchart-card {
+    margin: 28px 0 34px;
+    overflow: hidden;
+    background: #f5fafb;
+    border: 2px solid #cbdde1;
+    border-radius: 8px;
+  }
+
+  .flowchart-heading {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 14px 18px;
+    color: #3b454c;
+    background: #e4f2f5;
+    border-bottom: 1px solid #cbdde1;
+  }
+
+  .flowchart-heading span {
+    display: inline-grid;
+    min-width: 47px;
+    height: 25px;
+    place-items: center;
+    color: #fff;
+    background: var(--cyan);
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .flowchart-heading strong { color: #354047; font-size: 15px; }
+
+  .flowchart-canvas {
+    padding: 18px;
+    background: #f8fcfc;
+  }
+
+  .flowchart-canvas svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .source-link {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0 3px;
+    padding: 1px 8px;
+    color: #167e96;
+    background: var(--cyan-soft);
+    border: 1px solid #bfeaf2;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 750;
+    text-decoration: none;
+    vertical-align: baseline;
+    overflow-wrap: anywhere;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-top: 54px;
+    padding-top: 22px;
+    color: var(--muted);
+    border-top: 1px dashed #cfc9c6;
+    font-size: 13px;
+  }
+
+  .footer-brand { color: var(--ink); font-weight: 850; }
+
+  @media (max-width: 700px) {
+    body { width: 100vw; font-size: 16px; }
+    .hero { min-height: 460px; }
+    .hero-copy { width: 100%; padding: 34px 34px 170px; }
+    .brand { margin-bottom: 30px; }
+    h1 { font-size: 34px; }
+    .hero-art { top: auto; bottom: 35px; width: 48%; height: 190px; }
+    .mascot-stage { transform: scale(.62); transform-origin: right bottom; }
+    .content { padding: 0 28px 40px; }
+    .stats { grid-template-columns: 1fr; }
+    .article h2 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<main class="report">
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="brand"><span class="brand-mark">A</span>AstrBot Deep Research</div>
+      <div class="eyebrow">深度研究简报 · DEEP RESEARCH BRIEF</div>
+      <h1>Minecraft 红石比较器：功能、模式与工作原理</h1>
+      <div class="hero-subtitle">从多源信息中提炼事实、观点与趋势</div>
+    </div>
+    <div class="hero-art"><div class="mascot-stage" aria-hidden="true">
+  <span class="spark one"></span><span class="spark two"></span>
+  <div class="mascot-panel">
+    <span class="antenna"></span>
+    <span class="bot-ear left"></span><span class="bot-ear right"></span>
+    <span class="bot-face"></span><span class="bot-smile"></span>
+  </div>
+</div></div>
+  </header>
+
+  <div class="content">
+    <section class="stats">
+      <div class="stat"><span class="stat-label">生成日期</span><span class="stat-value">2026.07.19</span></div>
+      <div class="stat"><span class="stat-label">外部来源</span><span class="stat-value">1 个</span></div>
+      <div class="stat"><span class="stat-label">预计阅读</span><span class="stat-value">约 4 分钟</span></div>
+    </section>
+
+    <section class="summary"><span class="summary-label">研究导读</span><p>Minecraft 红石比较器用于读取、比较和扣减 0 到 15 的红石信号。掌握后方主输入与两侧阈值的关系，就能理解它在库存检测、密码锁和数值电路中的作用。</p></section>
+
+    <article class="article">
+<h2><span class="section-number">01</span>它到底在比较什么</h2>
+<p>红石比较器会读取<strong>后方输入</strong>的信号强度，并同时读取左右两侧中较强的一路信号。红石信号强度范围都是 <strong>0 到 15</strong>；比较器不会把两侧信号继续向前传递，它们只参与判断。</p>
+<table>
+  <thead><tr><th>输入位置</th><th>作用</th><th>参与方式</th></tr></thead>
+  <tbody>
+    <tr><td>后方</td><td>主输入 R</td><td>决定可输出的基础强度</td></tr>
+    <tr><td>左右两侧</td><td>侧向输入 S</td><td>取两侧中较高的强度作为阈值</td></tr>
+    <tr><td>前方</td><td>输出</td><td>输出比较或相减后的最终强度</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="section-number">02</span>比较模式与减法模式</h2>
+<p>默认的<strong>比较模式</strong>适合做信号门：只有当后方输入不小于侧向最强信号时，才原样输出后方强度。右键切换后，前方小红石火把点亮，进入<strong>减法模式</strong>。</p>
+<ul>
+  <li><strong>比较模式：</strong>若 R ≥ S，输出 R；否则输出 0。</li>
+  <li><strong>减法模式：</strong>输出 max(R - S, 0)。</li>
+  <li><strong>延迟：</strong>两种模式的输出延迟都是 1 个红石刻，也就是 2 个游戏刻。</li>
+</ul>
+<section class="flowchart-card">
+      <div class="flowchart-heading"><span>FLOW</span><strong>研究流程</strong></div>
+      <div class="flowchart-canvas"><svg viewBox="0 0 720 788" role="img" aria-label="研究流程图" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718087"/></marker></defs>
+      <path d="M 360.0 124.0 C 360.0 163.0, 360.0 163.0, 360.0 202.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><path d="M 360.0 278.0 C 360.0 317.0, 360.0 317.0, 360.0 356.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><path d="M 360.0 432.0 C 360.0 471.0, 246.0 471.0, 246.0 510.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><text x="303.0" y="464.0" text-anchor="middle" font-size="12" font-weight="700" fill="#5b6870" stroke="#f6fbfc" stroke-width="5" paint-order="stroke">否</text><path d="M 246.0 586.0 C 246.0 625.0, 246.0 625.0, 246.0 664.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><text x="246.0" y="618.0" text-anchor="middle" font-size="12" font-weight="700" fill="#5b6870" stroke="#f6fbfc" stroke-width="5" paint-order="stroke">是</text><path d="M 246.0 586.0 C 246.0 625.0, 474.0 625.0, 474.0 664.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><text x="360.0" y="618.0" text-anchor="middle" font-size="12" font-weight="700" fill="#5b6870" stroke="#f6fbfc" stroke-width="5" paint-order="stroke">否</text><path d="M 360.0 432.0 C 360.0 471.0, 474.0 471.0, 474.0 510.0" fill="none" stroke="#718087" stroke-width="2.4" marker-end="url(#flow-arrow)"/><text x="417.0" y="464.0" text-anchor="middle" font-size="12" font-weight="700" fill="#5b6870" stroke="#f6fbfc" stroke-width="5" paint-order="stroke">是</text><g class="flow-node"><rect x="267.0" y="48.0" width="186" height="76" rx="38.0" fill="#e3f5f8" stroke="#43b5cf" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="360.0" y="91.0">后方输入信号 R</tspan></text></g><g class="flow-node"><rect x="267.0" y="202.0" width="186" height="76" rx="12.0" fill="#fae9f0" stroke="#e980a7" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="360.0" y="245.0">读取侧向最强信号 S</tspan></text></g><g class="flow-node"><polygon points="360.0,356.0 453.0,394.0 360.0,432.0 267.0,394.0" fill="#fff0e9" stroke="#e99578" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="360.0" y="399.0">减法模式?</tspan></text></g><g class="flow-node"><polygon points="246.0,510.0 339.0,548.0 246.0,586.0 153.0,548.0" fill="#e8f5f1" stroke="#61baa9" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="246.0" y="553.0">R 是否大于等于 S?</tspan></text></g><g class="flow-node"><rect x="153.0" y="664.0" width="186" height="76" rx="38.0" fill="#e3f5f8" stroke="#43b5cf" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="246.0" y="707.0">输出 R</tspan></text></g><g class="flow-node"><rect x="381.0" y="664.0" width="186" height="76" rx="38.0" fill="#fae9f0" stroke="#e980a7" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="474.0" y="707.0">输出 0</tspan></text></g><g class="flow-node"><rect x="381.0" y="510.0" width="186" height="76" rx="38.0" fill="#fff0e9" stroke="#e99578" stroke-width="3"/><text text-anchor="middle" font-size="15" font-weight="750" fill="#303840"><tspan x="474.0" y="543.5">输出 max(R - S,</tspan><tspan x="474.0" y="562.5">0)</tspan></text></g>
+    </svg></div>
+    </section>
+
+<h2><span class="section-number">03</span>为什么它能读取容器状态</h2>
+<p>比较器还能读取许多方块保存的状态，并将其转换为 0 到 15 的红石信号。例如箱子、漏斗、熔炉、投掷器等容器会按填充程度给出信号；讲台、物品展示框、唱片机等特殊方块也能提供各自的状态信号。</p>
+<blockquote><p>比较器读取的是“方块状态转换后的强度”，不是直接识别物品名称。因此它非常适合做库存检测、分类机、音乐机和物品展示框密码锁。</p></blockquote>
+
+<h2><span class="section-number">04</span>常见电路用途</h2>
+<ol>
+  <li><strong>库存检测：</strong>根据容器填充度，触发补货、报警或熔炉阵列。</li>
+  <li><strong>信号筛选：</strong>用比较模式拦截低于阈值的红石信号。</li>
+  <li><strong>数值运算：</strong>用减法模式扣除侧向强度，制作计数和优先级电路。</li>
+  <li><strong>状态读取：</strong>把展示框旋转角度、唱片机状态等转为可用信号。</li>
+</ol>
+
+<h2><span class="section-number">05</span>快速记忆</h2>
+<p>把比较器理解成一个带两种算法的信号处理器即可：默认模式负责“<strong>够不够</strong>”，减法模式负责“<strong>还剩多少</strong>”。后方提供主数值，侧面提供阈值或扣减量，前方给出最终结果。</p>
+<p>机制参考：<a class="source-link" href="https://minecraft.wiki/w/Redstone_Comparator">Minecraft Wiki · Redstone Comparator</a></p>
+</article>
+
+    <footer class="footer">
+      <span class="footer-brand">AstrBot Deep Research</span>
+      <span>AI 生成内容 · 请结合原始来源核验</span>
+    </footer>
+  </div>
+</main>
+</body>
+</html>

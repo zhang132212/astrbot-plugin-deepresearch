@@ -1,0 +1,8 @@
+httpx[http2]
+aiohttp
+beautifulsoup4
+lxml
+markdown
+pydantic
+PyYAML
+duckduckgo-search
