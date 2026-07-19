@@ -1,12 +1,10 @@
 # output_format/formatters.py
 """Concrete report formatters and the shared visual report theme."""
 
-import base64
 import html
 import math
 import re
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import markdown
@@ -16,12 +14,10 @@ from bs4 import BeautifulSoup
 
 from .base import BaseOutputFormatter
 from .flowchart import render_mermaid_flowchart
+from .hero_patterns import render_random_hero
 
 
 SOURCE_PATTERN = re.compile(r"\[来源:\s*(https?://[^\]\s]+)\]")
-HERO_ASSET_PATH = Path(__file__).resolve().parent.parent / "assets" / "report_hero.png"
-
-
 REPORT_TEMPLATE = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -170,6 +166,11 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     inset: 20px 22px 0 0;
   }}
 
+  .hero-pattern {{
+    position: absolute;
+    inset: 20px 22px 0 0;
+  }}
+
   .mascot-panel {{
     position: absolute;
     top: 34px;
@@ -264,6 +265,53 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
 
   .spark.one {{ top: 24px; left: 14px; }}
   .spark.two {{ right: 5px; bottom: 45px; width: 18px; height: 18px; border-color: var(--cyan); }}
+
+  .hero-pattern-library {{ transform: rotate(-4deg); }}
+
+  .library-book {{
+    position: absolute;
+    width: 210px;
+    height: 245px;
+    border: 7px solid #343a46;
+    border-radius: 14px 24px 24px 14px;
+  }}
+
+  .library-book-back {{ top: 46px; right: 72px; background: #f6c6d7; transform: rotate(11deg); }}
+  .library-book-front {{ top: 36px; right: 102px; padding: 49px 31px; background: #e4f6f9; }}
+  .library-book-front::before {{ content: ""; position: absolute; top: 0; bottom: 0; left: 42px; width: 6px; background: #343a46; }}
+  .library-book-front span {{ display: block; height: 11px; margin: 16px 0 0 27px; background: #55bfd9; border-radius: 3px; }}
+  .library-book-front span:nth-child(2) {{ width: 112px; background: #ef8eb1; }}
+  .library-book-front span:nth-child(3) {{ width: 83px; background: #69c8b7; }}
+  .library-lens {{ position: absolute; top: 210px; right: 22px; width: 93px; height: 93px; border: 10px solid #343a46; border-radius: 50%; background: rgba(255,255,255,.55); }}
+  .library-lens::after {{ content: ""; position: absolute; width: 65px; height: 15px; right: -47px; bottom: -31px; background: #343a46; border-radius: 9px; transform: rotate(48deg); }}
+  .library-lens i {{ position: absolute; width: 28px; height: 28px; top: 21px; left: 21px; border: 7px solid var(--pink); border-radius: 50%; }}
+  .library-spark {{ position: absolute; width: 21px; height: 21px; border: 6px solid var(--cyan); transform: rotate(45deg); }}
+  .library-spark-one {{ top: 18px; left: 42px; }}
+  .library-spark-two {{ right: 16px; top: 52px; border-color: var(--pink); }}
+
+  .hero-pattern-signal {{ transform: rotate(5deg); }}
+  .signal-frame {{ position: absolute; top: 48px; right: 50px; width: 273px; height: 236px; border: 7px solid #343a46; border-radius: 28px; background: #f8fcfc; overflow: hidden; }}
+  .signal-line {{ position: absolute; left: 28px; right: 28px; height: 10px; border-radius: 5px; background: #55bfd9; }}
+  .line-one {{ top: 53px; right: 86px; }}
+  .line-two {{ top: 105px; left: 73px; background: #ef8eb1; }}
+  .line-three {{ top: 157px; right: 54px; background: #69c8b7; }}
+  .signal-core {{ position: absolute; top: 94px; right: 133px; width: 94px; height: 94px; background: #fff0e9; border: 7px solid #343a46; border-radius: 50%; }}
+  .signal-core span {{ position: absolute; inset: 22px; background: var(--coral); border-radius: 50%; }}
+  .signal-card {{ position: absolute; width: 68px; height: 48px; border: 6px solid #343a46; border-radius: 11px; background: #e4f6f9; }}
+  .card-one {{ top: 14px; right: 15px; transform: rotate(19deg); }}
+  .card-two {{ bottom: 2px; left: 12px; background: #f6c6d7; transform: rotate(-17deg); }}
+
+  .hero-pattern-notes {{ transform: rotate(4deg); }}
+  .note-sheet {{ position: absolute; top: 35px; right: 77px; width: 237px; height: 270px; padding: 55px 33px; background: #fffaf7; border: 7px solid #343a46; border-radius: 19px; box-shadow: 22px 18px 0 #f7c8d8; }}
+  .note-tab {{ position: absolute; top: -25px; left: 55px; width: 105px; height: 34px; background: #55bfd9; border: 7px solid #343a46; border-radius: 10px 10px 0 0; }}
+  .note-sheet i {{ display: block; height: 12px; margin: 18px 0; background: #d8e8eb; border-radius: 5px; }}
+  .note-sheet i:nth-of-type(2) {{ width: 78%; background: #f6c6d7; }}
+  .note-sheet i:nth-of-type(3) {{ width: 91%; background: #d7f0ea; }}
+  .note-pencil {{ position: absolute; right: 18px; bottom: 34px; width: 156px; height: 25px; background: var(--coral); border: 6px solid #343a46; border-radius: 9px; transform: rotate(-43deg); }}
+  .note-pencil::before {{ content: ""; position: absolute; left: -30px; top: -6px; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-right: 30px solid #343a46; }}
+  .note-check {{ position: absolute; width: 32px; height: 18px; border-left: 7px solid #69c8b7; border-bottom: 7px solid #69c8b7; transform: rotate(-45deg); }}
+  .check-one {{ top: 72px; left: 14px; }}
+  .check-two {{ top: 163px; left: 25px; border-color: #ef8eb1; }}
 
   .content {{
     position: relative;
@@ -567,33 +615,6 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
-CSS_MASCOT = """<div class="mascot-stage" aria-hidden="true">
-  <span class="spark one"></span><span class="spark two"></span>
-  <div class="mascot-panel">
-    <span class="antenna"></span>
-    <span class="bot-ear left"></span><span class="bot-ear right"></span>
-    <span class="bot-face"></span><span class="bot-smile"></span>
-  </div>
-</div>"""
-
-
-def _hero_visual() -> str:
-    """Embed an optional local hero asset; otherwise use the built-in mascot."""
-    if not HERO_ASSET_PATH.is_file():
-        return CSS_MASCOT
-
-    try:
-        encoded = base64.b64encode(HERO_ASSET_PATH.read_bytes()).decode("ascii")
-        return (
-            '<img src="data:image/png;base64,'
-            + encoded
-            + '" alt="Deep Research mascot illustration">'
-        )
-    except OSError as exc:
-        logger.warning(f"[ReportTheme] 无法读取横幅图片，使用默认视觉: {exc}")
-        return CSS_MASCOT
-
-
 def build_report_html(markdown_content: str) -> str:
     """Turn report Markdown into a self-contained, image-friendly HTML document."""
     normalized = SOURCE_PATTERN.sub(lambda match: f"[来源]({match.group(1)})", markdown_content)
@@ -658,7 +679,7 @@ def build_report_html(markdown_content: str) -> str:
         reading_minutes=reading_minutes,
         summary_block=summary_block,
         article_body=root.decode_contents(),
-        hero_visual=_hero_visual(),
+        hero_visual=render_random_hero(),
     )
 
 

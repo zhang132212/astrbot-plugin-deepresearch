@@ -1,6 +1,7 @@
 """Generate a standalone browser preview for the report theme."""
 
 import ast
+import argparse
 import html
 import importlib.util
 import sys
@@ -11,11 +12,17 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 FORMATTERS_PATH = PROJECT_DIR / "output_format" / "formatters.py"
 FLOWCHART_PATH = PROJECT_DIR / "output_format" / "flowchart.py"
+HERO_PATTERNS_PATH = PROJECT_DIR / "output_format" / "hero_patterns.py"
 
 FLOWCHART_SPEC = importlib.util.spec_from_file_location("preview_flowchart", FLOWCHART_PATH)
 flowchart = importlib.util.module_from_spec(FLOWCHART_SPEC)
 sys.modules[FLOWCHART_SPEC.name] = flowchart
 FLOWCHART_SPEC.loader.exec_module(flowchart)
+
+HERO_PATTERNS_SPEC = importlib.util.spec_from_file_location("preview_hero_patterns", HERO_PATTERNS_PATH)
+hero_patterns = importlib.util.module_from_spec(HERO_PATTERNS_SPEC)
+sys.modules[HERO_PATTERNS_SPEC.name] = hero_patterns
+HERO_PATTERNS_SPEC.loader.exec_module(hero_patterns)
 
 
 def _read_string_constant(name: str) -> str:
@@ -69,8 +76,11 @@ assert result.verified</code></pre>
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--hero-index", type=int, default=0)
+    args = parser.parse_args()
+
     template = _read_string_constant("REPORT_TEMPLATE")
-    mascot = _read_string_constant("CSS_MASCOT")
     title = "人工智能智能体的发展趋势与实际应用"
     flowchart_html = flowchart.render_mermaid_flowchart(
         """flowchart LR
@@ -92,12 +102,14 @@ def main() -> None:
         reading_minutes=4,
         summary_block=summary,
         article_body=SAMPLE_ARTICLE.replace("<!-- FLOWCHART -->", flowchart_html or ""),
-        hero_visual=mascot,
+        hero_visual=hero_patterns.BUILTIN_HEROES[
+            args.hero_index % len(hero_patterns.BUILTIN_HEROES)
+        ],
     )
 
     output_dir = PROJECT_DIR / "preview"
     output_dir.mkdir(exist_ok=True)
-    output_path = output_dir / "report_theme_preview.html"
+    output_path = output_dir / f"report_theme_preview_{args.hero_index % len(hero_patterns.BUILTIN_HEROES)}.html"
     output_path.write_text(output, encoding="utf-8")
     print(output_path)
 

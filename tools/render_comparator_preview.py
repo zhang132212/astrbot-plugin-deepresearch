@@ -11,6 +11,7 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 FORMATTERS_PATH = PROJECT_DIR / "output_format" / "formatters.py"
 FLOWCHART_PATH = PROJECT_DIR / "output_format" / "flowchart.py"
+HERO_PATTERNS_PATH = PROJECT_DIR / "output_format" / "hero_patterns.py"
 
 
 def _read_string_constant(name: str) -> str:
@@ -31,10 +32,18 @@ def _load_flowchart_module():
     return module
 
 
+def _load_hero_patterns_module():
+    spec = importlib.util.spec_from_file_location("comparator_hero_patterns", HERO_PATTERNS_PATH)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def main() -> None:
     template = _read_string_constant("REPORT_TEMPLATE")
-    mascot = _read_string_constant("CSS_MASCOT")
     flowchart = _load_flowchart_module()
+    hero_patterns = _load_hero_patterns_module()
 
     flowchart_html = flowchart.render_mermaid_flowchart(
         """flowchart TD
@@ -95,7 +104,7 @@ def main() -> None:
         reading_minutes=4,
         summary_block=summary,
         article_body=article,
-        hero_visual=mascot,
+        hero_visual=hero_patterns.BUILTIN_HEROES[0],
     )
 
     output_dir = PROJECT_DIR / "preview"

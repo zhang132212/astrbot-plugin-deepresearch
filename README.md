@@ -192,13 +192,13 @@ docker compose restart astrbot
 
 ### 自定义横幅
 
-默认主题带有内置的原创机器人视觉。若要使用自己的授权插画，将 PNG 文件放在以下路径即可自动替换：
+默认主题会在四套内置的原创视觉之间随机切换：研究机器人、资料检索、信号分析与研究笔记。若要使用自己的授权插画，在以下目录放入一个或多个 PNG 文件：
 
 ```text
-assets/report_hero.png
+assets/heroes/
 ```
 
-推荐尺寸为 `900 x 760` 像素，主体置于中部或右侧，并避免在图片底边放置重要内容。更多说明见 [assets/README.md](assets/README.md)。
+每次生成报告时，插件会从该目录的 PNG 中随机选择一张；只要目录中存在自定义图片，就会优先使用它们。推荐尺寸为 `900 x 760` 像素，主体置于中部或右侧，并避免在图片底边放置重要内容。旧路径 `assets/report_hero.png` 仍然兼容。更多说明见 [assets/heroes/README.md](assets/heroes/README.md)。
 
 ### 流程图语法
 
